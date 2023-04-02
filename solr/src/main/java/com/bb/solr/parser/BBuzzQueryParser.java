@@ -1,5 +1,6 @@
 package com.bb.solr.parser;
 
+import org.apache.lucene.index.Term;
 import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.Query;
@@ -17,8 +18,8 @@ public class BBuzzQueryParser extends QParser {
   public Query parse() throws SyntaxError {
     // TODO: get synonyms and just run multiple queries
     Query query = new BooleanQuery.Builder().
-        add(this.getQuery(), BooleanClause.Occur.SHOULD).
-        add(this.getQuery(), BooleanClause.Occur.SHOULD).
+        add(new TermQuery(new Term("name", this.qstr)), BooleanClause.Occur.SHOULD).
+        add(new TermQuery(new Term("name", this.qstr)), BooleanClause.Occur.SHOULD).
         build();
 
     return query;
