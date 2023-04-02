@@ -1,3 +1,8 @@
 solr/target
 
+# VSCode
 .vscode
+
+# IntelliJ
+.idea
+solr/solr.iml
