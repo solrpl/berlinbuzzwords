@@ -202,7 +202,5 @@
     </highlighting>
   </searchComponent>
 
-  <!--
   <queryParser name="bbuzz" class="com.bb.solr.parser.BBuzzQParserPlugin"/>
-  -->
 </config>
