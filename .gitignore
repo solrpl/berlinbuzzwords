@@ -6,3 +6,5 @@ solr/target
 # IntelliJ
 .idea
 solr/solr.iml
+
+tf-java-poc/target

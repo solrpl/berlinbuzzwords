@@ -7,19 +7,19 @@ import org.apache.solr.search.QParserPlugin;
 
 import java.io.IOException;
 
-public class BBuzzQParserPlugin extends QParserPlugin {
+public class BBuzzQParserHTTPPlugin extends QParserPlugin {
   @Override
   public QParser createParser(String qstr, SolrParams localParams, SolrParams params, SolrQueryRequest req) {
-    return new BBuzzQueryParser(qstr, localParams, params, req);
+    return new BBuzzQueryParserHTTP(qstr, localParams, params, req);
   }
   @Override
   public String getDescription() {
-    return "Example query parser plugin for Berlin Buzzwords 2023";
+    return "Example HTTP query parser plugin for Berlin Buzzwords 2023";
   }
 
   @Override
   public String getName() {
-    return "BBuzzQParserPlugin";
+    return "BBuzzQParserHTTPPlugin";
   }
 
   public void close() throws IOException {
