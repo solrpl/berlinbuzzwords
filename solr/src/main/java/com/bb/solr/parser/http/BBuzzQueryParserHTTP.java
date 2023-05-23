@@ -1,4 +1,4 @@
-package com.bb.solr.parser;
+package com.bb.solr.parser.http;
 
 import org.apache.http.HttpStatus;
 import org.apache.http.NameValuePair;
@@ -23,7 +23,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class BBuzzQueryParserHTTP extends QParser {
   private String apiHost = "localhost:3000";

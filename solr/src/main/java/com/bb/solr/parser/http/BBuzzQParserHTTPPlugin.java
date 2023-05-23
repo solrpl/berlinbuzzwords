@@ -1,4 +1,4 @@
-package com.bb.solr.parser;
+package com.bb.solr.parser.http;
 
 import org.apache.solr.common.params.SolrParams;
 import org.apache.solr.request.SolrQueryRequest;
