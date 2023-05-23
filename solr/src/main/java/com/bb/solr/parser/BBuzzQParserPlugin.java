@@ -10,7 +10,11 @@ import java.io.IOException;
 public class BBuzzQParserPlugin extends QParserPlugin {
   @Override
   public QParser createParser(String qstr, SolrParams localParams, SolrParams params, SolrQueryRequest req) {
-    return new BBuzzQueryParser(qstr, localParams, params, req);
+    try {
+      return new BBuzzQueryParser(qstr, localParams, params, req);
+    } catch (Exception ex) {
+      throw new RuntimeException(ex);
+    }
   }
   @Override
   public String getDescription() {

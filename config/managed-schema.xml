@@ -23,6 +23,7 @@
   <field name="id" type="string" indexed="true" stored="true" required="true" multiValued="false" />
   <field name="name" type="text_general" indexed="true" stored="true"/>
   <field name="text" type="text_general" indexed="true" stored="true"/>
+  <field name="interest" type="text_general" indexed="true" stored="true"/>
 
   <uniqueKey>id</uniqueKey>
 

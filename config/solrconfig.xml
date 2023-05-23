@@ -116,91 +116,27 @@
        <str name="echoParams">explicit</str>
        <str name="wt">json</str>
        <str name="indent">true</str>
-       <str name="df">text</str>
+       <str name="df">name</str>
      </lst>
   </requestHandler>
+
+  <requestHandler name="/bbuzz" class="solr.SearchHandler">
+    <lst name="defaults">
+      <str name="echoParams">explicit</str>
+      <str name="wt">json</str>
+      <str name="indent">true</str>
+      <str name="df">name</str>
+      <str name="savedModelDirectory">/Users/gro/Solry/bbuzz/server/solr/bbuzz/conf/model/saved_model</str>
+      <str name="vocabularyFile">/Users/gro/Solry/bbuzz/server/solr/bbuzz/conf/model/bert_tiny/vocab.txt</str>
+      <str name="classesFile">/Users/gro/Solry/bbuzz/server/solr/bbuzz/conf/model/classes</str>
+    </lst>
+  </requestHandler>
+
+  <queryParser name="bbuzz" class="com.bb.solr.parser.BBuzzQParserPlugin" />
 
   <initParams path="/update/**,/query,/select,/tvrh,/elevate,/spell,update">
     <lst name="defaults">
       <str name="df">text</str>
     </lst>
   </initParams>
-
-  <searchComponent class="solr.HighlightComponent" name="highlight">
-    <highlighting>
-      <fragmenter name="gap"
-                  default="true"
-                  class="solr.highlight.GapFragmenter">
-        <lst name="defaults">
-          <int name="hl.fragsize">100</int>
-        </lst>
-      </fragmenter>
-      <fragmenter name="regex"
-                  class="solr.highlight.RegexFragmenter">
-        <lst name="defaults">
-          <int name="hl.fragsize">70</int>
-          <float name="hl.regex.slop">0.5</float>
-          <str name="hl.regex.pattern">[-\w ,/\n\&quot;&apos;]{20,200}</str>
-        </lst>
-      </fragmenter>
-      <formatter name="html"
-                 default="true"
-                 class="solr.highlight.HtmlFormatter">
-        <lst name="defaults">
-          <str name="hl.simple.pre"><![CDATA[<em>]]></str>
-          <str name="hl.simple.post"><![CDATA[</em>]]></str>
-        </lst>
-      </formatter>
-      <encoder name="html"
-               class="solr.highlight.HtmlEncoder" />
-      <fragListBuilder name="simple"
-                       class="solr.highlight.SimpleFragListBuilder"/>
-      <fragListBuilder name="single"
-                       class="solr.highlight.SingleFragListBuilder"/>
-      <fragListBuilder name="weighted"
-                       default="true"
-                       class="solr.highlight.WeightedFragListBuilder"/>
-      <fragmentsBuilder name="default"
-                        default="true"
-                        class="solr.highlight.ScoreOrderFragmentsBuilder">
-      </fragmentsBuilder>
-
-      <!-- multi-colored tag FragmentsBuilder -->
-      <fragmentsBuilder name="colored"
-                        class="solr.highlight.ScoreOrderFragmentsBuilder">
-        <lst name="defaults">
-          <str name="hl.tag.pre"><![CDATA[
-               <b style="background:yellow">,<b style="background:lawgreen">,
-               <b style="background:aquamarine">,<b style="background:magenta">,
-               <b style="background:palegreen">,<b style="background:coral">,
-               <b style="background:wheat">,<b style="background:khaki">,
-               <b style="background:lime">,<b style="background:deepskyblue">]]></str>
-          <str name="hl.tag.post"><![CDATA[</b>]]></str>
-        </lst>
-      </fragmentsBuilder>
-
-      <boundaryScanner name="default"
-                       default="true"
-                       class="solr.highlight.SimpleBoundaryScanner">
-        <lst name="defaults">
-          <str name="hl.bs.maxScan">10</str>
-          <str name="hl.bs.chars">.,!? &#9;&#10;&#13;</str>
-        </lst>
-      </boundaryScanner>
-
-      <boundaryScanner name="breakIterator"
-                       class="solr.highlight.BreakIteratorBoundaryScanner">
-        <lst name="defaults">
-          <!-- type should be one of CHARACTER, WORD(default), LINE and SENTENCE -->
-          <str name="hl.bs.type">WORD</str>
-          <!-- language and country are used when constructing Locale object.  -->
-          <!-- And the Locale object will be used when getting instance of BreakIterator -->
-          <str name="hl.bs.language">en</str>
-          <str name="hl.bs.country">US</str>
-        </lst>
-      </boundaryScanner>
-    </highlighting>
-  </searchComponent>
-
-  <queryParser name="bbuzz" class="com.bb.solr.parser.BBuzzQParserPlugin"/>
 </config>
