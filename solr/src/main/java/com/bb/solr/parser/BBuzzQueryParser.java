@@ -32,7 +32,7 @@ public class BBuzzQueryParser extends QParser {
   @Override
   public Query parse() throws SyntaxError {
     String classificationResult = this.classifier.classify(qstr);
-    log.info("Classification result: %s", classificationResult);
+    log.info("Classification result: " + classificationResult);
 
     // TODO: parse the query
     BooleanQuery.Builder builder = new BooleanQuery.Builder();
