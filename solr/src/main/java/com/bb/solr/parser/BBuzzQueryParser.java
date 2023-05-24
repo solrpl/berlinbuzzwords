@@ -7,6 +7,7 @@ import org.apache.lucene.search.*;
 import org.apache.solr.common.params.SolrParams;
 import org.apache.solr.request.SolrQueryRequest;
 import org.apache.solr.search.ExtendedDismaxQParser;
+import org.apache.solr.search.LuceneQParser;
 import org.apache.solr.search.QParser;
 import org.apache.solr.search.SyntaxError;
 import org.slf4j.Logger;
@@ -24,19 +25,19 @@ import java.util.List;
 public class BBuzzQueryParser extends QParser {
   private static final Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
   private BBuzzClassifier classifier;
+  private LuceneQParser luceneQueryParser;
 
   public BBuzzQueryParser(String qstr, SolrParams localParams, SolrParams params, SolrQueryRequest req) throws IOException {
     super(qstr, localParams, params, req);
+    this.luceneQueryParser = new LuceneQParser(qstr, localParams, params, req);
     setupClassifier(params);
   }
   @Override
   public Query parse() throws SyntaxError {
     String classificationResult = this.classifier.classify(qstr);
-    log.info("Classification result: " + classificationResult);
-
-    // TODO: parse the query
+    Query parsedQuery = luceneQueryParser.parse();
     BooleanQuery.Builder builder = new BooleanQuery.Builder();
-    builder.add(new TermQuery(new Term("name", this.qstr)), BooleanClause.Occur.SHOULD);
+    builder.add(parsedQuery, BooleanClause.Occur.MUST);
     if (!classificationResult.isEmpty()) {
       builder.add(new TermQuery(new Term("interest", classificationResult)), BooleanClause.Occur.SHOULD);
     }
