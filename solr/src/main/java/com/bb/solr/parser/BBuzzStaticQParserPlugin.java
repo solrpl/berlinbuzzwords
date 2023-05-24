@@ -1,0 +1,32 @@
+package com.bb.solr.parser;
+
+import org.apache.solr.common.params.SolrParams;
+import org.apache.solr.request.SolrQueryRequest;
+import org.apache.solr.search.QParser;
+import org.apache.solr.search.QParserPlugin;
+
+import java.io.IOException;
+
+public class BBuzzStaticQParserPlugin extends QParserPlugin {
+  @Override
+  public QParser createParser(String qstr, SolrParams localParams, SolrParams params, SolrQueryRequest req) {
+    try {
+      return new BBuzzStaticQueryParser(qstr, localParams, params, req);
+    } catch (Exception ex) {
+      throw new RuntimeException(ex);
+    }
+  }
+  @Override
+  public String getDescription() {
+    return "Example query parser plugin for Berlin Buzzwords 2023";
+  }
+
+  @Override
+  public String getName() {
+    return "BBuzzQParserPlugin";
+  }
+
+  public void close() throws IOException {
+    super.close();
+  }
+}

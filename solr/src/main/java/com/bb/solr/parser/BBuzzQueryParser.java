@@ -30,30 +30,37 @@ public class BBuzzQueryParser extends QParser {
   public BBuzzQueryParser(String qstr, SolrParams localParams, SolrParams params, SolrQueryRequest req) throws IOException {
     super(qstr, localParams, params, req);
     this.luceneQueryParser = new LuceneQParser(qstr, localParams, params, req);
-    setupClassifier(params);
+    this.classifier = setupClassifier(params);
   }
   @Override
   public Query parse() throws SyntaxError {
-    String classificationResult = this.classifier.classify(qstr);
     Query parsedQuery = luceneQueryParser.parse();
     BooleanQuery.Builder builder = new BooleanQuery.Builder();
     builder.add(parsedQuery, BooleanClause.Occur.MUST);
-    if (!classificationResult.isEmpty()) {
-      builder.add(new TermQuery(new Term("interest", classificationResult)), BooleanClause.Occur.SHOULD);
-    }
+
+    appendClassificationResults(builder);
 
     return builder.build();
   }
 
-  private void setupClassifier(SolrParams params) throws IOException {
+  protected void appendClassificationResults(BooleanQuery.Builder builder) {
+    String classificationResult = this.classifier.classify(qstr);
+    if (!classificationResult.isEmpty()) {
+      builder.add(new TermQuery(new Term("interest", classificationResult)),
+          BooleanClause.Occur.SHOULD);
+    }
+    this.classifier.close();
+  }
+
+  protected BBuzzClassifier setupClassifier(SolrParams params) throws IOException {
     List<String> data = loadClasses(params);
 
     SavedModelBundle model = SavedModelBundle.load(params.get("savedModelDirectory"), "serve");
     BBuzzTokenizer tokenizer = new BBuzzTokenizer(params.get("vocabularyFile"), true);
-    this.classifier = new BBuzzClassifier(tokenizer, model, data);
+    return new BBuzzClassifier(tokenizer, model, data);
   }
 
-  private List<String> loadClasses(SolrParams params) throws IOException {
+  protected List<String> loadClasses(SolrParams params) throws IOException {
     List<String> lines = new ArrayList<>();
     BufferedReader reader = null;
 

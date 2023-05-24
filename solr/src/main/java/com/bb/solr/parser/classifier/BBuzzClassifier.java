@@ -68,4 +68,9 @@ public class BBuzzClassifier {
 
     return "";
   }
+
+  public void close() {
+    this.model.close();
+
+  }
 }
