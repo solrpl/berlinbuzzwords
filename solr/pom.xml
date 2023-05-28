@@ -39,8 +39,8 @@
     </plugins>
   </build>
   <version>1.0-SNAPSHOT</version>
-  <name>solr</name>
-  <url></url>
+  <name>bbuzz</name>
+  <url>https://github.com/solrpl/berlinbuzzwords</url>
   <dependencies>
     <dependency>
       <groupId>org.apache.solr</groupId>
