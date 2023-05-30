@@ -127,9 +127,9 @@
       <str name="indent">true</str>
       <str name="df">name</str>
       <str name="defType">bbuzz</str>
-      <str name="savedModelDirectory">/Users/gro/Solry/bbuzz/server/solr/bbuzz/conf/model/saved_model</str>
-      <str name="vocabularyFile">/Users/gro/Solry/bbuzz/server/solr/bbuzz/conf/model/bert_tiny/vocab.txt</str>
-      <str name="classesFile">/Users/gro/Solry/bbuzz/server/solr/bbuzz/conf/model/classes</str>
+      <str name="savedModelDirectory">/tmp/bbuzz/saved_model</str>
+      <str name="vocabularyFile">/tmp/bbuzz/bert_tiny/vocab.txt</str>
+      <str name="classesFile">/tmp/bbuzz/classes</str>
     </lst>
   </requestHandler>
 
@@ -140,14 +140,14 @@
       <str name="indent">true</str>
       <str name="df">name</str>
       <str name="defType">bbuzz_static</str>
-      <str name="savedModelDirectory">/Users/gro/Solry/bbuzz/server/solr/bbuzz/conf/model/saved_model</str>
-      <str name="vocabularyFile">/Users/gro/Solry/bbuzz/server/solr/bbuzz/conf/model/bert_tiny/vocab.txt</str>
-      <str name="classesFile">/Users/gro/Solry/bbuzz/server/solr/bbuzz/conf/model/classes</str>
+      <str name="savedModelDirectory">/tmp/bbuzz/saved_model</str>
+      <str name="vocabularyFile">/tmp/bbuzz/bert_tiny/vocab.txt</str>
+      <str name="classesFile">/tmp/bbuzz/classes</str>
     </lst>
   </requestHandler>
 
-  <queryParser name="bbuzz" class="com.bb.solr.parser.BBuzzQParserPlugin" />
-  <queryParser name="bbuzz_static" class="com.bb.solr.parser.BBuzzStaticQParserPlugin" />
+  <queryParser name="bbuzz" class="bbuzz:com.bb.solr.parser.BBuzzQParserPlugin" />
+  <queryParser name="bbuzz_static" class="bbuzz:com.bb.solr.parser.BBuzzStaticQParserPlugin" />
 
   <initParams path="/update/**,/query,/select,/tvrh,/elevate,/spell,update">
     <lst name="defaults">
