@@ -1,0 +1,43 @@
+clean:
+        rm bbuzz_key.der
+        rm bbuzz_key.pem
+        rm -rf server/solr/bbuzz_shard1_replica_n1/
+        rm -rf server/solr/filestore/
+        rm -rf server/solr/zoo_data/
+
+start-solr:
+        bin/solr start -f -c -Denable.packages=true
+
+generate-key:
+        openssl genrsa -out bbuzz_key.pem 512
+        openssl rsa -in bbuzz_key.pem -pubout -outform DER -out bbuzz_key.der
+
+add-key:
+        bin/solr package add-key bbuzz_key.der
+
+sign:
+        openssl dgst -sha1 -sign bbuzz_key.pem plugin/bbuzz-1.0.jar | openssl enc -base64 | sed 's/+/%2B/g' | tr -d \\n | sed
+
+upload SIG:
+        curl --data-binary @plugin/bbuzz-1.0.jar -XPUT  http://localhost:8983/api/cluster/files/bbuzz/1.0/bbuzz-1.0.jar?sig={{SIG}}
+
+upload-check:
+        curl http://localhost:8983/api/node/files/bbuzz/1.0?omitHeader=true
+
+add:
+        curl  http://localhost:8983/api/cluster/package -H 'Content-type:application/json' -d  '{"add":{"package":"bbuzz","version":"1.0","files":["/bbuzz/1.0/bbuzz-1.0.jar"]}}'
+
+add-check:
+        curl http://localhost:8983/api/cluster/package?omitHeader=true
+
+upload-config:
+        bin/solr zk upconfig -z localhost:9983 -n bbuzz -d plugin/config/
+
+create-collection:
+        bin/solr create_collection -n bbuzz -c bbuzz -shards 1 -replicationFactor 1
+
+run-query-one:
+        curl 'http://localhost:8983/solr/bbuzz/select?q=how%20do%20I%20become%20a%20data%20scientist&debugQuery=on'
+
+run-query-two:
+        curl 'http://localhost:8983/solr/bbuzz/bbuzz?q=how%20do%20I%20become%20a%20data%20scientist&defType=bbuzz&debugQuery=on'
