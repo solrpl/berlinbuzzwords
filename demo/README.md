@@ -56,6 +56,8 @@ bin/solr create_collection -n bbuzz -c bbuzz -shards 1 -replicationFactor 1
 
 ## Run Queries
 
+http://localhost:8983/solr/bbuzz/select?q=how%20do%20I%20become%20a%20data%20scientist&debugQuery=on
+
 http://localhost:8983/solr/bbuzz/bbuzz?q=how%20do%20I%20become%20a%20data%20scientist&defType=bbuzz&debugQuery=on
 
 http://localhost:8983/solr/bbuzz/bbuzz?q=how%20do%20I%20become%20a%20data%20scientist&defType=bbuzz_static&debugQuery=on
