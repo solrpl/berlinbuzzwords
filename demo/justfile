@@ -1,3 +1,6 @@
+unpack-model:
+        mkdir /tmp/bbuzz/; cp plugin/model.zip /tmp; unzip /tmp/model.zip
+
 clean:
         rm bbuzz_key.der
         rm bbuzz_key.pem
