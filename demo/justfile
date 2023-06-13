@@ -44,3 +44,6 @@ step11-run-query-one:
 
 step12-run-query-two:
         curl 'http://localhost:8983/solr/bbuzz/bbuzz?q=how%20do%20I%20become%20a%20data%20scientist&defType=bbuzz&debugQuery=on'
+
+step13-run-query-static:
+        curl 'http://localhost:8983/solr/bbuzz/bbuzz?q=how%20do%20I%20become%20a%20data%20scientist&defType=bbuzz_static&debugQuery=on'
