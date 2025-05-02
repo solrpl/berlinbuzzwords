@@ -1,0 +1,10 @@
+What is the primary tool discussed in the blog post for getting data into Vespa?
+What is the name of the Logstash output plugin specifically for Vespa?
+According to the high-level steps listed for both local and cloud setups, what is the first action to take?
+What specific command is shown in the tutorial to install the Vespa Output plugin for Logstash?
+What is the function of setting the detect_schema option to true within the vespa_feed section of the Logstash configuration?
+In the local Vespa example, what command is used to run the Vespa container using Podman, including the image name?
+After the initial run of Logstash with detect_schema enabled successfully deploys the application package, what change must be made to the configuration before running Logstash again to feed the actual data?
+When configuring Logstash to output to Vespa Cloud, what two specific parameters related to the cloud instance must be added under the vespa_feed output section?
+When using Logstash with Vespa Cloud, the application package is not automatically deployed. List the four distinct Vespa CLI commands that Logstash instructs the user to copy-paste and execute manually to achieve deployment.
+Describe the key difference in how the generated Vespa application package is deployed when using a local Vespa instance versus using Vespa Cloud, according to the steps outlined in the blog post.
