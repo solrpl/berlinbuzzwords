@@ -15,3 +15,7 @@ The video of the talk is available on [YouTube](https://www.youtube.com/watch?v=
 ## 2025 
 
 Now in the works ;) 
+
+## 2026 
+
+Now in the works :) 
