@@ -8,3 +8,5 @@ solr/target
 solr/solr.iml
 
 tf-java-poc/target
+
+2026/dataset/movielens/*
