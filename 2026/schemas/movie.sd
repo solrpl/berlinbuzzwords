@@ -1,0 +1,23 @@
+schema movie {
+    document movie {
+        field movie_id type int {
+            indexing: attribute | summary
+        }
+        field title type string {
+            indexing: index | summary
+            index: enable-bm25
+        }
+        field genres type array<string> {
+            indexing: attribute | summary
+        }
+        field year type int {
+            indexing: attribute | summary
+        }
+        field imdb_id type string {
+            indexing: attribute | summary
+        }
+        field tmdb_id type string {
+            indexing: attribute | summary
+        }
+    }
+}

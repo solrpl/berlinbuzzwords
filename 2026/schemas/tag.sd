@@ -1,0 +1,17 @@
+schema tag {
+    document tag {
+        field user_id type int {
+            indexing: attribute | summary
+        }
+        field movie_id type int {
+            indexing: attribute | summary
+        }
+        field tag type string {
+            indexing: index | summary
+            index: enable-bm25
+        }
+        field timestamp type long {
+            indexing: attribute | summary
+        }
+    }
+}

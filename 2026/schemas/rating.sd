@@ -1,0 +1,16 @@
+schema rating {
+    document rating {
+        field user_id type int {
+            indexing: attribute | summary
+        }
+        field movie_id type int {
+            indexing: attribute | summary
+        }
+        field rating type float {
+            indexing: attribute | summary
+        }
+        field timestamp type long {
+            indexing: attribute | summary
+        }
+    }
+}

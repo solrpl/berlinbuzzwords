@@ -191,7 +191,7 @@ def delete_all(feed_url: str, doctype: str) -> None:
     deleted = 0
     params = {"selection": "true", "cluster": "content"}
     while True:
-        resp = requests.delete(url, params=params, timeout=60)
+        resp = requests.delete(url, params=params, timeout=300)
         if resp.status_code not in (200, 201):
             raise RuntimeError(f"Delete visit failed [{resp.status_code}]: {resp.text}")
         body = resp.json()
@@ -284,14 +284,18 @@ def deploy(config_url: str, package_bytes: bytes) -> None:
     print(f"Deployed successfully: session {session_id} activated.")
 
 
+SCHEMAS_DIR = os.path.join(os.path.dirname(__file__), "schemas")
+
+
 def build_app_package() -> bytes:
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
         zf.writestr("services.xml", services_xml())
         zf.writestr("hosts.xml", hosts_xml())
-        zf.writestr("schemas/movie.sd", movie_schema())
-        zf.writestr("schemas/rating.sd", rating_schema())
-        zf.writestr("schemas/tag.sd", tag_schema())
+        for sd_file in os.listdir(SCHEMAS_DIR):
+            if sd_file.endswith(".sd"):
+                with open(os.path.join(SCHEMAS_DIR, sd_file), encoding="utf-8") as f:
+                    zf.writestr(f"schemas/{sd_file}", f.read())
     return buf.getvalue()
 
 
