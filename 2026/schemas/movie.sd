@@ -19,5 +19,18 @@ schema movie {
         field tmdb_id type string {
             indexing: attribute | summary
         }
+        field overview type string {
+            indexing: index | summary
+            index: enable-bm25
+        }
+        field original_language type string {
+            indexing: attribute | summary
+        }
+        field runtime type int {
+            indexing: attribute | summary
+        }
+        field production_countries type array<string> {
+            indexing: attribute | summary
+        }
     }
 }

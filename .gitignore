@@ -12,3 +12,6 @@ tf-java-poc/target
 2026/dataset/movielens/*
 
 .DS_Store
+
+# Dataset 
+ml-25m
