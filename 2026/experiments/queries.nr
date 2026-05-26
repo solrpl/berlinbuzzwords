@@ -839,7 +839,7 @@ else:
         def _runtime_color(r: int) -> str:
             if r < 60:   return "lightcoral"
             if r < 105:  return "steelblue"
-            if r < 150:  return "darkorange
+            if r < 150:  return "darkorange"
             return "mediumpurple"
 
         labels = [f"{r}–{r+15}" for r in runtime_df["bucket"].to_list()]
