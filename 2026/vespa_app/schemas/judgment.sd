@@ -2,6 +2,9 @@ schema judgment {
     document judgment {
         field query type string {
             indexing: index | attribute | summary
+            linguistics {
+                profile: standardLowerFoldingStem
+            }
         }
 
         field doc_id type string {
@@ -14,6 +17,9 @@ schema judgment {
 
         field explanation type string {
             indexing: index | summary
+            linguistics {
+                profile: standardLowerFoldingStem
+            }
         }
     }
 
@@ -34,5 +40,19 @@ schema judgment {
 
     fieldset default {
         fields: query, explanation
+    }
+
+    document-summary debugtokens {
+        summary query {}
+        summary title_tokens {
+            source: query
+            tokens
+        }
+        summary explanation {}
+        summary explanation_tokens {
+            source: explanation
+            tokens
+        }
+        from-disk
     }
 }

@@ -10,8 +10,7 @@ POST /search/
           "group": "explanation_attribute",
           "order": "-count()",
           "each": {
-            "output": "count()",
-            "label": "explanations"
+            "output": "count()"
           }
         }
       }
@@ -32,10 +31,7 @@ POST /search/
         "query",
         {
           "text": {
-            "query": "id:movies:movie",
-            "attributes": {
-              "grammar": "phrase"
-            }
+            "query": "id:movies:movie"
           }
         }
       ]
@@ -56,10 +52,7 @@ POST /search/
         "query",
         {
           "text": {
-            "query": "id:movies:movie",
-            "attributes": {
-              "grammar": "phrase"
-            }
+            "query": "id:movies:movie"
           }
         }
       ]
@@ -116,6 +109,9 @@ POST /search/
       }
     ]
   },
+  "model": {
+    "restrict": "judgment"
+  },
   "hits": 1
 }
 #%%vespa
@@ -133,10 +129,7 @@ POST /search/
               "query",
               {
                 "text": {
-                  "query": "id:movies:movie",
-                  "attributes": {
-                    "grammar": "phrase"
-                  }
+                  "query": "id:movies:movie"
                 }
               }
             ]
@@ -158,7 +151,13 @@ POST /search/
           "order": "-count()",
           "output": "count()",
           "each": {
-            "output": "count()"
+            "output": "count()",
+            # debug: bring in a judgement to see the query
+            #"all": {
+            #  "each": {
+            #    "output": "summary()",
+            #  }
+            #}
           }
         }
       }
@@ -170,7 +169,7 @@ POST /search/
   "hits": 1
 }
 #%%vespa
-#H1 What do you mean Document ID format?
+#H1 What do you mean Document ID format? Bad query?
 POST /search/
 {
   "select": {
@@ -179,10 +178,7 @@ POST /search/
         "explanation",
         {
           "text": {
-            "query": "document ID format",
-            "attributes": {
-              "grammar": "phrase"
-            }
+            "query": "document ID format"
           }
         }
       ]

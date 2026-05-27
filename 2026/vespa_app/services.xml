@@ -1,6 +1,53 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <services version="1.0">
   <container id="default" version="1.0">
+    <component id="linguistics"
+        class="com.yahoo.language.lucene.LuceneLinguistics"
+        bundle="lucene-linguistics">
+      <config name="com.yahoo.language.lucene.lucene-analysis">
+        <!-- in case we need files for synonyms/stopwords/etc. <configDir>lucene-linguistics</configDir> -->
+        <analysis>
+          <item key="profile=standardLowerFoldingStem;language=en">
+            <tokenizer>
+              <name>standard</name>
+            </tokenizer>
+            <tokenFilters>
+              <item>
+                <name>lowercase</name>
+              </item>
+              <item>
+                <name>asciiFolding</name>
+              </item>
+              <item>
+                <name>kStem</name>
+              </item>
+            </tokenFilters>
+          </item>
+
+          <item key="profile=whitespaceLowerFoldingTrigrams;language=en">
+            <tokenizer>
+              <name>whitespace</name>
+            </tokenizer>
+            <tokenFilters>
+              <item>
+                <name>lowercase</name>
+              </item>
+              <item>
+                <name>asciiFolding</name>
+              </item>
+              <item>
+                <name>nGram</name>
+                <conf>
+                  <item key="minGramSize">3</item>
+                  <item key="maxGramSize">3</item>
+                </conf>
+              </item>
+            </tokenFilters>
+          </item>
+        </analysis>
+      </config>
+    </component>
+    
     <document-api/>
     <search/>
     <nodes>

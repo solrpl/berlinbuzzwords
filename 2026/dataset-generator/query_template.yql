@@ -1,1 +1,1 @@
-select * from movie where {allowEmpty:true}userInput(@kw) LIMIT 4
+select title,genres_att from movie where default contains ({allowEmpty:true}text(@kw)) LIMIT 4

@@ -1,1 +1,1 @@
-select * from movie where true LIMIT 0 | all(group(genres) max(20) each(output(count())))
+select * from movie where true LIMIT 0 | all(group(genres_att) max(20) each(output(count())))

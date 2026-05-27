@@ -2,21 +2,62 @@ schema movie {
     document movie {
         field id type string {
             indexing: attribute | summary
-            attribute: fast-search
         }
 
         field title type string {
             indexing: index | summary
             index: enable-bm25
+            linguistics {
+                profile: whitespaceLowerFoldingTrigrams # standardLowerFoldingStem 
+            }
+            # needed to index all grams
+            stemming: multiple
         }
 
         field genres type array<string> {
-            indexing: index | attribute | summary
-            attribute: fast-search
+            indexing: index | summary
+            linguistics {
+                profile: whitespaceLowerFoldingTrigrams # standardLowerFoldingStem
+            }
+            # needed to index all grams
+            stemming: multiple
         }
+    }
+
+    field genres_att type array<string> {
+        indexing: input genres | attribute
     }
 
     fieldset default {
         fields: title, genres
+    }
+
+    rank-profile bm25 {
+        first-phase {
+            expression: bm25(title) + bm25(genres)
+        }
+    }
+
+    rank-profile native-rank {
+        first-phase {
+            expression: nativeRank(title,genres)
+        }
+    }
+
+    rank-profile default inherits native-rank {
+    }
+
+    document-summary debugtokens {
+        summary title {}
+        summary title_tokens {
+            source: title
+            tokens
+        }
+        summary genres {}
+        summary genres_tokens {
+            source: genres
+            tokens
+        }
+        from-disk
     }
 }

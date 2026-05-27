@@ -35,7 +35,7 @@ number_of_docs: 50
 # Must be at least one field
 doc_fields:
   - "title"
-  - "genres"
+  - "genres_att"
 
 # (Optional) File containing predefined queries to use instead of or alongside generated ones
 # If available, must be in a txt format.
@@ -43,11 +43,12 @@ doc_fields:
 
 # (Optional) Whether to generate queries from documents
 # Default: true; set to false to disable query generation from documents
-generate_queries_from_documents: true
+# NOTE: this will reuse cached queries from the previous run (if there are any)
+generate_queries_from_documents: false # set to true for the first time you want to generate queries from documents
 
 # generate queries from category filters
 category_queries:
-  - fields: ["genres"]
+  - fields: ["genres_att"]
     values_query_template_file: "/Users/radu/gits/berlinbuzzwords/2026/dataset-generator/genre_facet.yql"
 
 # Total number of queries to generate (includes predefined queries, if any)
