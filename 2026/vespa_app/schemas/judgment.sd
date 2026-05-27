@@ -1,0 +1,38 @@
+schema judgment {
+    document judgment {
+        field query type string {
+            indexing: index | attribute | summary
+        }
+
+        field doc_id type string {
+            indexing: attribute | summary
+        }
+
+        field rating type int {
+            indexing: attribute | summary
+        }
+
+        field explanation type string {
+            indexing: index | summary
+        }
+    }
+
+    # copy explanation as an attribute field
+    field explanation_attribute type string {
+        indexing: input explanation | attribute
+    }
+
+    # terms of the query as an attribute field
+    field query_terms type array<string> {
+        indexing: input query | trim | lowercase | split "[^\\p{L}\\p{N}]+" | for_each { trim } | attribute
+    }
+
+    # terms of the explanation as an attribute field
+    field explanation_terms type array<string> {
+        indexing: input explanation | trim | lowercase | split "[^\\p{L}\\p{N}]+" | for_each { trim } | attribute
+    }
+
+    fieldset default {
+        fields: query, explanation
+    }
+}

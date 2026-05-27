@@ -1,0 +1,22 @@
+schema movie {
+    document movie {
+        field id type string {
+            indexing: attribute | summary
+            attribute: fast-search
+        }
+
+        field title type string {
+            indexing: index | summary
+            index: enable-bm25
+        }
+
+        field genres type array<string> {
+            indexing: index | attribute | summary
+            attribute: fast-search
+        }
+    }
+
+    fieldset default {
+        fields: title, genres
+    }
+}
