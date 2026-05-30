@@ -58,4 +58,11 @@ And some used to prepare the talk, including:
 
 #### Demo Flow
 
-TODO
+To be able to use the `demo.nr` open it in the Navigator and adjust the following properties in the `0. Config & shared helpers` section:
+
+- `VESPA_CONFIG_URL` - Vespa configuration URL, defaults to `http://localhost:19071`
+- `VESPA_FEED_URL` - Vespa feed URL, defaults to `http://localhost:8080`
+- `NAMESPACE` - Vespa namespace, defaults to `movies`
+- `VESPA_APP_DIR` - Vespa application directory, defaults to `./vespa_app`
+- `DATA_DIR` - Directory with MovieLens data, defaults to `./ml-25m`
+- `TMDB_API_KEY` - [TMDB](https://www.themoviedb.org) API key, needs to be set if you want to see parts of the flow - steps 6 to 9.
