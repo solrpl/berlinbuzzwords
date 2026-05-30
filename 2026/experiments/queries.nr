@@ -857,3 +857,76 @@ else:
         plt.xticks(rotation=45, ha="right")
         plt.tight_layout()
         show(fig)
+
+#%%python
+# FastText helpers — load model and embed queries
+import numpy as np
+import re
+import fasttext as ft
+
+_ft_model = None
+
+def load_ft(path: str = "fasttext.bin"):
+    global _ft_model
+    if _ft_model is None:
+        _ft_model = ft.load_model(path)
+        print(f"FastText model loaded: dim={_ft_model.get_dimension()}")
+    return _ft_model
+
+def ft_clean(text: str) -> str:
+    text = re.sub(r'\(\d{4}\)', '', text).lower()
+    return re.sub(r'[^a-z0-9 ]', ' ', text).strip()
+
+def ft_embed(text: str) -> list:
+    model = load_ft()
+    words = ft_clean(text).split()
+    if not words:
+        return [0.0] * model.get_dimension()
+    vecs = np.array([model.get_word_vector(w) for w in words], dtype=np.float32)
+    vec = vecs.mean(axis=0)
+    norm = np.linalg.norm(vec)
+    vec = (vec / norm) if norm > 0 else vec
+    return vec.tolist()
+
+print("FastText helpers ready — call ft_embed('your query') to get a vector")
+
+#%%vespa
+# Semantic search with FastText — pure ANN
+# (replace the "values" array with the output of ft_embed() from the Python cell above)
+POST /search
+{
+  "yql": "select title, genres from movie where {targetHits: 10} nearestNeighbor(embedding_fasttext, q)",
+  "ranking": "semantic-fasttext",
+  "input.query(q)": {"values": [0.0]},
+  "hits": 10
+}
+#%%vespa
+# Hybrid: BM25 title/genres + FastText ANN
+POST /search
+{
+  "yql": "select title, genres from movie where {targetHits: 100} nearestNeighbor(embedding_fasttext, q) OR title contains \"space\"",
+  "ranking": "hybrid-fasttext",
+  "input.query(q)": {"values": [0.0]},
+  "hits": 10
+}
+#%%python
+# End-to-end: embed a query and run ANN search against Vespa
+_query_text = "sci-fi space adventure"
+_vec = ft_embed(_query_text)
+
+_resp = requests.post(
+    f"{VESPA_URL}/search/",
+    json={
+        "yql": "select title, genres from movie where {targetHits: 10} nearestNeighbor(embedding_fasttext, q)",
+        "ranking": "semantic-fasttext",
+        "input.query(q)": {"values": _vec},
+        "hits": 10,
+    },
+    timeout=10,
+).json()
+
+print(f"Query: '{_query_text}'")
+print(f"Errors: {_resp.get('root', {}).get('errors', [])}")
+for hit in _resp.get("root", {}).get("children", []):
+    f = hit.get("fields", {})
+    print(f"  {hit['relevance']:.4f}  {f.get('title', '?')}  {f.get('genres', [])}")

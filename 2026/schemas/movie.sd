@@ -32,5 +32,48 @@ schema movie {
         field production_countries type array<string> {
             indexing: attribute | summary
         }
+
+        field embedding_fasttext type tensor<float>(x[100]) {
+            indexing: attribute | index
+            index {
+                hnsw {
+                    max-links-per-node: 16
+                    neighbors-to-explore-at-insert: 100
+                }
+            }
+            attribute {
+                distance-metric: angular
+            }
+        }
+    }
+
+    fieldset default {
+        fields: title
+    }
+
+    rank-profile bm25 {
+        first-phase {
+            expression: bm25(title)
+        }
+    }
+
+    rank-profile semantic-fasttext {
+        num-threads-per-search: 1
+        inputs {
+            query(q) tensor<float>(x[100])
+        }
+        first-phase {
+            expression: closeness(field, embedding_fasttext)
+        }
+    }
+
+    rank-profile hybrid-fasttext {
+        num-threads-per-search: 1
+        inputs {
+            query(q) tensor<float>(x[100])
+        }
+        first-phase {
+            expression: 0.7 * bm25(title) + 0.3 * closeness(field, embedding_fasttext)
+        }
     }
 }

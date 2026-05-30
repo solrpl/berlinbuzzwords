@@ -18,7 +18,7 @@ The video of the talk is available on [YouTube](https://www.youtube.com/watch?v=
 
 ## 2026 
 
-The code in the repository is the code used to prepare the data for the Berlin Buzzwords 2026 talk.
+The code in the repository is the code used to prepare the data for the Berlin Buzzwords 2026 talk. 
 
 ### MovieLens ml-25m Vespa Indexer
 
@@ -41,34 +41,21 @@ docker run --detach \
   vespaengine/vespa
 ```
 
-#### Setup
+#### Files Structure
 
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-```
+In the `2026` directory you can find a few files and directories:
 
-#### Run
+- `recipes` - some recipes for the demo
+- `vespa_app` - the Vespa application used for the demo
+- `demo.nr` - Navigator file for used demo
+- `requirements.txt` - Python requirements file
 
-```bash
-DATA_DIR=./ml-25m python3 batch.py
-```
+And some used to prepare the talk, including:
 
-The script will:
-1. Generate the Vespa application package (schemas + `services.xml`)
-2. Deploy it to the config server
-3. Feed all movies (~62K docs)
-4. Feed all ratings (~25M docs)
-5. Feed all tags (~1M docs)
-6. Print a final summary
+- `schemas` - old Vespa schemas used for experiments
+- `scripts` - scripts used for experiments 
+- `experiments` - Navigator recipes for experiments
 
-> **Note:** It can take quite some time to index the data.
+#### Demo Flow
 
-#### Verfication
-
-You can run the `verify.py` during indexing to check its status:
-
-```bash
-python3 verify.py
-```
+TODO
