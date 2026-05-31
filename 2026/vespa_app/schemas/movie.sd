@@ -70,6 +70,19 @@ schema movie {
         indexing: input genres | attribute
     }
 
+    field embedding_arctic type tensor<float>(x[384]) {
+        indexing: input title | embed arctic | attribute | index
+        index {
+            hnsw {
+                max-links-per-node: 16
+                neighbors-to-explore-at-insert: 100
+            }
+        }
+        attribute {
+            distance-metric: prenormalized-angular
+        }
+    }
+
     fieldset default {
         fields: title, genres
     }
@@ -106,6 +119,26 @@ schema movie {
         }
         first-phase {
             expression: 0.7 * bm25(title) + 0.3 * closeness(field, embedding_fasttext)
+        }
+    }
+
+    rank-profile semantic-arctic {
+        num-threads-per-search: 1
+        inputs {
+            query(q) tensor<float>(x[384])
+        }
+        first-phase {
+            expression: closeness(field, embedding_arctic)
+        }
+    }
+
+    rank-profile hybrid-arctic inherits bm25 {
+        num-threads-per-search: 1
+        inputs {
+            query(q) tensor<float>(x[384])
+        }
+        first-phase {
+            expression: 0.7 * bm25(title) + 0.3 * closeness(field, embedding_arctic)
         }
     }
 

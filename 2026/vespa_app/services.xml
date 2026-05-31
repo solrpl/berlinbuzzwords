@@ -48,6 +48,13 @@
       </config>
     </component>
     
+    <component id="arctic" type="hugging-face-embedder">
+      <transformer-model url="https://huggingface.co/Snowflake/snowflake-arctic-embed-xs/resolve/main/onnx/model.onnx"/>
+      <tokenizer-model url="https://huggingface.co/Snowflake/snowflake-arctic-embed-xs/raw/main/tokenizer.json"/>
+      <normalize>true</normalize>
+      <pooling-strategy>cls</pooling-strategy>
+    </component>
+
     <document-api/>
     <search/>
     <nodes>
