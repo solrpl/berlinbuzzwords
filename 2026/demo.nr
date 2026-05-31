@@ -262,7 +262,7 @@ else:
 # Feeds full documents (base fields + TMDB fields) so BM25 index on overview works.
 # Set ENRICH_LIMIT to None to run all ~62K movies (~5 h).
 ENRICH_LIMIT = None
-RESUME_FROM  = 9600   # ← set to last reported count to resume after a crash
+RESUME_FROM  = 0   # ← set to last reported count to resume after a crash
 
 if not TMDB_API_KEY:
     print("TMDB_API_KEY not set — skipping enrichment. Set it in cell 0.")
@@ -566,3 +566,83 @@ def compare(query):
 
 for _q in ["sci-fi space adventure", "heist thriller", "love story paris"]:
     compare(_q)
+
+#%%vespa
+# Arctic XS — pure semantic search (Vespa embeds the query server-side)
+POST /search
+{
+  "yql": "select title, genres from movie where {targetHits: 10} nearestNeighbor(embedding_arctic, q)",
+  "ranking": "semantic-arctic",
+  "input.query(q)": "embed(arctic, @text)",
+  "text": "sci-fi space adventure",
+  "hits": 10
+}
+#%%vespa
+# Arctic XS — hybrid: BM25 + Arctic ANN
+POST /search
+{
+  "yql": "select title, genres from movie where {targetHits: 100} nearestNeighbor(embedding_arctic, q) OR userQuery()",
+  "query": "space",
+  "ranking": "hybrid-arctic",
+  "input.query(q)": "embed(arctic, @text)",
+  "text": "sci-fi space adventure",
+  "hits": 10
+}
+#%%python
+# ── 13. BM25 vs FastText vs Arctic — three-way comparison ─────────────────────
+import matplotlib.gridspec as gridspec
+
+def _arctic(query, n=10):
+    resp = requests.get(
+        f"{VESPA_FEED_URL}/search/",
+        params={
+            "yql": f"select title, genres from movie where {{targetHits: {n}}} nearestNeighbor(embedding_arctic, q)",
+            "ranking": "semantic-arctic",
+            "input.query(q)": f"embed(arctic, {query})",
+            "hits": n,
+        },
+        timeout=30,   # longer — Vespa embeds query server-side
+    ).json()
+    errs = resp.get("root", {}).get("errors", [])
+    if errs: print("Arctic errors:", errs)
+    return [
+        {"title": h["fields"].get("title", "?"), "genres": h["fields"].get("genres", []), "score": h["relevance"]}
+        for h in resp.get("root", {}).get("children", [])
+    ]
+
+def compare3(query):
+    bm25_hits   = _bm25(query)
+    ft_hits     = _ann(query)
+    arctic_hits = _arctic(query)
+
+    fig = plt.figure(figsize=(20, 6))
+    fig.suptitle(f'Query: "{query}"', fontsize=13, fontweight="bold")
+    gs  = gridspec.GridSpec(1, 3, wspace=0.05)
+
+    for col, (hits, label, color) in enumerate([
+        (bm25_hits,   "BM25",      "steelblue"),
+        (ft_hits,     "FastText",  "mediumseagreen"),
+        (arctic_hits, "Arctic XS", "darkorchid"),
+    ]):
+        ax = fig.add_subplot(gs[col])
+        if not hits:
+            ax.text(0.5, 0.5, "no results", ha="center", va="center", transform=ax.transAxes)
+        else:
+            mx   = max(h["score"] for h in hits) or 1
+            bars = ax.barh(range(len(hits)), [h["score"] / mx for h in hits], color=color, alpha=0.85)
+            ax.set_yticks(range(len(hits)))
+            ax.set_yticklabels([_short(h["title"]) for h in hits], fontsize=9)
+            ax.invert_yaxis()
+            ax.set_xlim(0, 1.2)
+            ax.set_xlabel("Normalised score")
+            for i, (bar, h) in enumerate(zip(bars, hits)):
+                ax.text(bar.get_width() + 0.02, i, ", ".join(h["genres"][:2]),
+                        va="center", fontsize=7, color="grey")
+        ax.set_title(label, fontsize=11, color=color, fontweight="bold")
+        if col > 0: ax.yaxis.set_visible(False)
+
+    plt.tight_layout()
+    show(fig)
+
+for _q in ["sci-fi space adventure", "heist thriller", "love story paris"]:
+    compare3(_q)
