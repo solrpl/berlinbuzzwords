@@ -1,5 +1,6 @@
 #%%python
-# ── 0. Config & shared helpers ─────────────────────────────────────────────────
+#H1 Flow Configuration
+# 1. Config & shared helpers
 # Edit the variables in this section, then run the cells in order.
 import csv
 import json
@@ -28,11 +29,13 @@ except ImportError:
 VESPA_CONFIG_URL = "http://localhost:19071"
 VESPA_FEED_URL   = "http://localhost:8080"
 NAMESPACE        = "movies"
-VESPA_APP_DIR    = "/Users/radu/gits/berlinbuzzwords/2026/vespa_app"
+VESPA_APP_DIR    = "./vespa_app"
+# /Users/gro/praca/conferences/berlinbuzzwords/2026/vespa_app
 
 # ── Data ───────────────────────────────────────────────────────────────────────
 DATA_DIR = "./ml-25m"
 # /Users/radu/gits/berlinbuzzwords/2026/dataset/movielens/ml-latest-small/
+# /Users/gro/praca/conferences/berlinbuzzwords/2026/ml-25m/
 
 # ── TMDB ───────────────────────────────────────────────────────────────────────
 TMDB_API_KEY = os.environ.get("TMDB_API_KEY", "")
@@ -95,14 +98,14 @@ def ft_embed(text: str):
 print(f"Config ready  |  TMDB key: {'set' if TMDB_API_KEY else 'NOT SET'}  |  FastText: {HAS_FT}")
 
 #%%python
-# ── 1. Deploy vespa_app ────────────────────────────────────────────────────────
+# 2. Deploy vespa_app
 print("Deploying vespa_app...")
 # you'll need Vespa CLI for this (e.g., brew install vespa-cli)
 subprocess.run(["vespa", "deploy", "--wait", "300"], cwd=VESPA_APP_DIR, check=True)
 print("Deployed.")
 
 #%%python
-# ── 2. Feed movies ─────────────────────────────────────────────────────────────
+# 3. Index Movies
 def _load_movies_for_feed():
     links = {}
     with open(os.path.join(DATA_DIR, "links.csv"), encoding="utf-8") as f:
@@ -184,7 +187,8 @@ fed, failed = _feed_docs(_movie_docs, total=len(_movie_docs))
 print(f"Movies fed: {fed:,}  failed: {failed:,}")
 
 #%%python
-# ── 3. Is the data clean? ──────────────────────────────────────────────────────
+#H1 Getting to Know the Data
+# 1. Is the data clean?
 _total      = search("select * from movie where true limit 0")["root"]["fields"]["totalCount"]
 _no_year    = search("select * from movie where !(year > 0) limit 0")["root"]["fields"]["totalCount"]
 _no_genre   = search('select * from movie where genres contains "(no genres listed)" limit 0')["root"]["fields"]["totalCount"]
@@ -210,7 +214,7 @@ axes[1].grid(True, alpha=0.3, axis="y")
 plt.tight_layout(); show(fig)
 
 #%%python
-# ── 4. Facets: genres & decades ────────────────────────────────────────────────
+# 2. Facets: genres & decades
 _genre_ch = groups(search("select * from movie where true limit 0 | all( group(genres_att) max(25) each( output(count()) ))"))
 _year_ch  = groups(search("select * from movie where year > 0 limit 0 | all( group(year) max(200) each( output(count()) ))"))
 
@@ -231,7 +235,7 @@ axes[1].grid(True, alpha=0.3, axis="y")
 plt.xticks(rotation=45); plt.tight_layout(); show(fig)
 
 #%%python
-# ── 5. Significant terms in titles ────────────────────────────────────────────
+# 3. Significant terms in titles
 _hits_resp = requests.get(
     f"{VESPA_FEED_URL}/search/",
     params={"yql": "select title from movie where true limit 400", "hits": 400, "timeout": "10s"},
@@ -256,6 +260,7 @@ else:
     ax.grid(True, alpha=0.3, axis="y"); plt.xticks(rotation=45, ha="right"); plt.tight_layout(); show(fig)
 
 #%%python
+#H1 Let's Enrich
 # ── 6. Enrich with TMDB ────────────────────────────────────────────────────────
 # Feeds full documents (base fields + TMDB fields) so BM25 index on overview works.
 # Set ENRICH_LIMIT to None to run all ~62K movies (~5 h).
@@ -335,7 +340,8 @@ else:
     print(f"Done: {_enriched:,} fed, {_failed_e:,} failed.")
 
 #%%python
-# ── 7. New field coverage (run after enrichment) ───────────────────────────────
+#H1 Data After Enrichment
+# 1. New field coverage
 _cov_resp = requests.get(
     f"{VESPA_FEED_URL}/search/",
     params={"yql": "select overview, original_language, runtime, production_countries from movie where true limit 400",
@@ -364,7 +370,7 @@ else:
     ax.grid(True, alpha=0.3, axis="y"); plt.tight_layout(); show(fig)
 
 #%%python
-# ── 8. Language & countries ────────────────────────────────────────────────────
+# 2. Language & countries
 _lang_ch    = groups(search("select * from movie where true limit 0 | all( group(original_language) max(30) each( output(count()) ))"))
 _country_ch = groups(search("select * from movie where true limit 0 | all( group(production_countries) max(20) each( output(count()) ))"))
 
@@ -388,7 +394,7 @@ else:
     plt.tight_layout(); show(fig)
 
 #%%python
-# ── 9. Runtime distribution ────────────────────────────────────────────────────
+# 3. Runtime distribution
 _rt_raw = groups(search("select * from movie where runtime > 0 limit 0 | all( group(runtime) max(400) each( output(count()) ))"))
 if not _rt_raw:
     print("No runtime data — run enrichment first.")
@@ -411,7 +417,8 @@ else:
         plt.xticks(rotation=45, ha="right"); plt.tight_layout(); show(fig)
 
 #%%vespa
-# BM25 search
+#H1 Ranking
+# 1. BM25
 POST /search
 {
   "yql": "select title, genres from movie where userQuery() limit 10",
@@ -419,7 +426,7 @@ POST /search
   "ranking": "bm25"
 }
 #%%vespa
-# native-rank
+# 2. Native-rank
 POST /search
 {
   "yql": "select title, genres from movie where userQuery() limit 10",
@@ -427,26 +434,27 @@ POST /search
   "ranking": "native-rank"
 }
 #%%vespa
-# Plot / overview search (after enrichment)
+# 3. Plot / overview search
 POST /search
 {
   "yql": "select title, genres, overview from movie where overview contains \"heist\" limit 5",
   "ranking": "bm25"
 }
 #%%vespa
-# Filter by language
+# 4. Filter by Language
 POST /search
 {
   "yql": "select title, year, runtime from movie where original_language matches \"ko\" limit 10"
 }
 #%%vespa
-# Filter by runtime — short films
+# 5. Filter by Runtime
 POST /search
 {
   "yql": "select title, runtime, genres from movie where runtime < 60 and runtime > 0 limit 10"
 }
 #%%python
-# ── 10. Train FastText ─────────────────────────────────────────────────────────
+#H1 FastText - Training
+# 1. Train FastText
 if not HAS_FT:
     print("Install fasttext-wheel and numpy first.")
 else:
@@ -476,7 +484,7 @@ else:
         print(f"  {word:8s} → {[w for _, w in nn]}")
 
 #%%python
-# ── 11. Feed FastText embeddings ───────────────────────────────────────────────
+# 2. Index FastText Embeddings
 if not HAS_FT:
     print("FastText not available.")
 else:
@@ -507,7 +515,8 @@ else:
     print(f"Done: {_ft_fed:,} fed, {_ft_fail:,} failed.")
 
 #%%python
-# ── 12. BM25 vs FastText — comparison charts ───────────────────────────────────
+#H1 FastText - Let's Compare
+# 1. BM25 vs FastText
 import matplotlib.gridspec as gridspec
 
 def _bm25(query, n=10):
@@ -559,7 +568,8 @@ for _q in ["sci-fi space adventure", "heist thriller", "love story paris"]:
     compare(_q)
 
 #%%vespa
-# Arctic XS — pure semantic search (Vespa embeds the query server-side)
+#H1 Arctic XS
+# 1. Arctic XS Semantic Search
 POST /search
 {
   "yql": "select title, genres from movie where {targetHits: 10} nearestNeighbor(embedding_arctic, q)",
@@ -569,7 +579,7 @@ POST /search
   "hits": 10
 }
 #%%vespa
-# Arctic XS — hybrid: BM25 + Arctic ANN
+# 2. Arctic XS BM25 + Arctic ANN
 POST /search
 {
   "yql": "select title, genres from movie where {targetHits: 100} nearestNeighbor(embedding_arctic, q) OR userQuery()",
@@ -580,7 +590,7 @@ POST /search
   "hits": 10
 }
 #%%python
-# ── 13. BM25 vs FastText vs Arctic — three-way comparison ─────────────────────
+# 3. BM25 vs FastText vs Arctic
 import matplotlib.gridspec as gridspec
 
 def _arctic(query, n=10):
