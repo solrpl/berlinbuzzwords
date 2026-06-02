@@ -30,12 +30,15 @@ VESPA_CONFIG_URL = "http://localhost:19071"
 VESPA_FEED_URL   = "http://localhost:8080"
 NAMESPACE        = "movies"
 VESPA_APP_DIR    = "./vespa_app"
-# /Users/gro/praca/conferences/berlinbuzzwords/2026/vespa_app
+# /Users/gro/praca/conferences/berlinbuzzwords/2026/vespa_app/
+# /Users/radu/gits/berlinbuzzwords/2026/vespa_app/
+
 
 # ── Data ───────────────────────────────────────────────────────────────────────
-DATA_DIR = "./ml-25m"
-# /Users/radu/gits/berlinbuzzwords/2026/dataset/movielens/ml-latest-small/
+DATA_DIR = "./ml-25m/"
 # /Users/gro/praca/conferences/berlinbuzzwords/2026/ml-25m/
+# /Users/radu/gits/berlinbuzzwords/2026/dataset/movielens/ml-latest-small/
+
 
 # ── TMDB ───────────────────────────────────────────────────────────────────────
 TMDB_API_KEY = os.environ.get("TMDB_API_KEY", "")
@@ -261,7 +264,8 @@ else:
 
 #%%python
 #H1 Let's Enrich
-# ── 6. Enrich with TMDB ────────────────────────────────────────────────────────
+# 1. Enrich with TMDB
+# We use TMDB - https://www.themoviedb.org
 # Feeds full documents (base fields + TMDB fields) so BM25 index on overview works.
 # Set ENRICH_LIMIT to None to run all ~62K movies (~5 h).
 ENRICH_LIMIT = None
