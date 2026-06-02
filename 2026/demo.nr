@@ -2,14 +2,13 @@
 # ── 0. Config & shared helpers ─────────────────────────────────────────────────
 # Edit the variables in this section, then run the cells in order.
 import csv
-import io
 import json
 import os
 import re
+import subprocess
+import threading
 import time
-import zipfile
 from collections import Counter
-from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
@@ -29,10 +28,11 @@ except ImportError:
 VESPA_CONFIG_URL = "http://localhost:19071"
 VESPA_FEED_URL   = "http://localhost:8080"
 NAMESPACE        = "movies"
-VESPA_APP_DIR    = "./vespa_app"
+VESPA_APP_DIR    = "/Users/radu/gits/berlinbuzzwords/2026/vespa_app"
 
 # ── Data ───────────────────────────────────────────────────────────────────────
 DATA_DIR = "./ml-25m"
+# /Users/radu/gits/berlinbuzzwords/2026/dataset/movielens/ml-latest-small/
 
 # ── TMDB ───────────────────────────────────────────────────────────────────────
 TMDB_API_KEY = os.environ.get("TMDB_API_KEY", "")
@@ -96,46 +96,10 @@ print(f"Config ready  |  TMDB key: {'set' if TMDB_API_KEY else 'NOT SET'}  |  Fa
 
 #%%python
 # ── 1. Deploy vespa_app ────────────────────────────────────────────────────────
-def _build_package() -> bytes:
-    buf = io.BytesIO()
-    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
-        # services + hosts
-        for fname in ("services.xml", "validation-overrides.xml"):
-            path = os.path.join(VESPA_APP_DIR, fname)
-            if os.path.exists(path):
-                with open(path, encoding="utf-8") as f:
-                    zf.writestr(fname, f.read())
-        zf.writestr("hosts.xml", """\
-<?xml version="1.0" encoding="utf-8" ?>
-<hosts>
-  <host name="localhost"><alias>node1</alias></host>
-</hosts>""")
-        # schemas
-        sd_dir = os.path.join(VESPA_APP_DIR, "schemas")
-        for sd in os.listdir(sd_dir):
-            if sd.endswith(".sd"):
-                with open(os.path.join(sd_dir, sd), encoding="utf-8") as f:
-                    zf.writestr(f"schemas/{sd}", f.read())
-    return buf.getvalue()
-
-def _deploy(pkg: bytes) -> None:
-    base = f"{VESPA_CONFIG_URL}/application/v2/tenant/default"
-    r = requests.post(f"{base}/session", data=pkg,
-                      headers={"Content-Type": "application/zip"}, timeout=60)
-    r.raise_for_status()
-    body        = r.json()
-    session_id  = body["session-id"]
-    prepare_url = body["prepared"]
-    print(f"  Session {session_id} created.")
-    r = requests.put(prepare_url, timeout=60); r.raise_for_status()
-    for entry in r.json().get("log", []):
-        if entry.get("level") in ("WARNING", "ERROR"):
-            print(f"  [{entry['level']}] {entry['message']}")
-    r = requests.put(r.json()["activate"], timeout=60); r.raise_for_status()
-    print(f"  Deployed: session {session_id} activated.")
-
-print("Building and deploying vespa_app…")
-_deploy(_build_package())
+print("Deploying vespa_app...")
+# you'll need Vespa CLI for this (e.g., brew install vespa-cli)
+subprocess.run(["vespa", "deploy", "--wait", "300"], cwd=VESPA_APP_DIR, check=True)
+print("Deployed.")
 
 #%%python
 # ── 2. Feed movies ─────────────────────────────────────────────────────────────
@@ -160,29 +124,63 @@ def _load_movies_for_feed():
             year = _parse_year(row["title"])
             if year:
                 fields["year"] = year
-            docs.append((mid, fields))
+            docs.append({"id": mid, "fields": fields})
     return docs
 
-def _post_movie(mid_fields):
-    mid, fields = mid_fields
-    r = requests.post(
-        f"{VESPA_FEED_URL}/document/v1/{NAMESPACE}/movie/docid/{mid}",
-        json={"fields": fields},
-        timeout=10,
-    )
-    return r.status_code == 200
+def _feed_docs(
+    docs_iter,
+    schema="movie",
+    total=None,
+    operation_type="feed",
+    progress_every=1000,
+    max_workers=64,
+    **kwargs,
+):
+    app = Vespa(url=VESPA_FEED_URL)
+    fed = failed = 0
+
+    def _callback(response, doc_id):
+        nonlocal fed, failed
+        if response.is_successful():
+            fed += 1
+        else:
+            failed += 1
+            print(f"  WARN {schema}/{doc_id}: {response.status_code}")
+        done = fed + failed
+        if done % progress_every == 0:
+            suffix = f" / {total:,}" if total is not None else ""
+            print(f"  {done:,}{suffix}")
+
+    errors = []
+
+    def _run_feed():
+        try:
+            app.feed_async_iterable(
+                iter=docs_iter,
+                schema=schema,
+                namespace=NAMESPACE,
+                callback=_callback,
+                operation_type=operation_type,
+                max_queue_size=1_000,
+                max_workers=max_workers,
+                max_connections=1,
+                **kwargs,
+            )
+        except BaseException as exc:
+            errors.append(exc)
+
+    # running from a separate thread to work around notebook limitations (asyncio.run() cannot be called from a running event loop)
+    thread = threading.Thread(target=_run_feed)
+    thread.start()
+    thread.join()
+    if errors:
+        raise errors[0]
+    return fed, failed
 
 _movie_docs = _load_movies_for_feed()
-print(f"Feeding {len(_movie_docs):,} movies with 32 workers…")
+print(f"Feeding {len(_movie_docs):,} movies with pyvespa async feed…")
 
-fed = failed = 0
-with ThreadPoolExecutor(max_workers=32) as pool:
-    futures = {pool.submit(_post_movie, doc): doc[0] for doc in _movie_docs}
-    for i, future in enumerate(as_completed(futures), 1):
-        if future.result(): fed += 1
-        else:               failed += 1
-        if i % 10_000 == 0: print(f"  {i:,} / {len(_movie_docs):,}")
-
+fed, failed = _feed_docs(_movie_docs, total=len(_movie_docs))
 print(f"Movies fed: {fed:,}  failed: {failed:,}")
 
 #%%python
@@ -314,27 +312,26 @@ else:
         _all_mids = _all_mids[:ENRICH_LIMIT]
     print(f"Enriching {len(_all_mids):,} movies (skipping first {RESUME_FROM:,}) — ~{len(_all_mids)/3.5/60:.0f} min…")
 
-    _enriched = _failed_e = 0
-    for i, mid in enumerate(_all_mids, 1):
-        fields   = dict(_base_movies[mid])          # copy base fields
-        tmdb_id  = _links_e.get(mid, {}).get("tmdb_id", "")
-        tmdb     = _tmdb_fetch(tmdb_id)
-        if tmdb.get("overview"):          fields["overview"]             = tmdb["overview"]
-        if tmdb.get("original_language"): fields["original_language"]    = tmdb["original_language"]
-        if tmdb.get("runtime"):           fields["runtime"]              = tmdb["runtime"]
-        countries = [c["iso_3166_1"] for c in tmdb.get("production_countries", [])]
-        if countries:                     fields["production_countries"] = countries
+    def _enriched_docs():
+        for mid in _all_mids:
+            fields   = dict(_base_movies[mid])          # copy base fields
+            tmdb_id  = _links_e.get(mid, {}).get("tmdb_id", "")
+            tmdb     = _tmdb_fetch(tmdb_id)
+            if tmdb.get("overview"):          fields["overview"]             = tmdb["overview"]
+            if tmdb.get("original_language"): fields["original_language"]    = tmdb["original_language"]
+            if tmdb.get("runtime"):           fields["runtime"]              = tmdb["runtime"]
+            countries = [c["iso_3166_1"] for c in tmdb.get("production_countries", [])]
+            if countries:                     fields["production_countries"] = countries
 
-        # Full document POST — guarantees BM25 re-indexing of all fields
-        r = requests.post(
-            f"{VESPA_FEED_URL}/document/v1/{NAMESPACE}/movie/docid/{mid}",
-            json={"fields": fields},
-            timeout=10,
-        )
-        if r.status_code == 200: _enriched += 1
-        else:                    _failed_e += 1
-        if i % 100 == 0: print(f"  {i:,}/{len(_all_mids):,}")
+            # Full document feed guarantees BM25 re-indexing of all fields.
+            yield {"id": mid, "fields": fields}
 
+    _enriched, _failed_e = _feed_docs(
+        _enriched_docs(),
+        total=len(_all_mids),
+        progress_every=100,
+        max_workers=16,
+    )
     print(f"Done: {_enriched:,} fed, {_failed_e:,} failed.")
 
 #%%python
@@ -492,27 +489,21 @@ else:
         vec  = vecs.mean(axis=0); norm = np.linalg.norm(vec)
         return (vec / norm).astype(np.float32) if norm > 0 else vec
 
-    def _feed_vec(mid_title_genres):
-        mid, title, genres = mid_title_genres
-        vec = _ft_vec(title, genres)
-        r = requests.put(
-            f"{VESPA_FEED_URL}/document/v1/{NAMESPACE}/movie/docid/{mid}",
-            json={"fields": {"embedding_fasttext": {"assign": {"values": vec.tolist()}}}},
-            timeout=10,
-        )
-        return r.status_code == 200
+    def _ft_updates():
+        for mid, m in _movies_ft.items():
+            vec = _ft_vec(m["title"], m["genres"])
+            yield {"id": mid, "fields": {"embedding_fasttext": {"assign": {"values": vec.tolist()}}}}
 
-    _ft_items = [(mid, m["title"], m["genres"]) for mid, m in _movies_ft.items()]
-    print(f"Feeding {len(_ft_items):,} vectors with 32 workers…")
+    _ft_total = len(_movies_ft)
+    print(f"Feeding {_ft_total:,} vectors with pyvespa async feed…")
 
-    _ft_fed = _ft_fail = 0
-    with ThreadPoolExecutor(max_workers=32) as pool:
-        futures = {pool.submit(_feed_vec, item): item[0] for item in _ft_items}
-        for i, future in enumerate(as_completed(futures), 1):
-            if future.result(): _ft_fed += 1
-            else:               _ft_fail += 1
-            if i % 5_000 == 0: print(f"  {i:,} / {len(_ft_items):,}")
-
+    _ft_fed, _ft_fail = _feed_docs(
+        _ft_updates(),
+        total=_ft_total,
+        operation_type="update",
+        progress_every=1000,
+        auto_assign=False,
+    )
     print(f"Done: {_ft_fed:,} fed, {_ft_fail:,} failed.")
 
 #%%python

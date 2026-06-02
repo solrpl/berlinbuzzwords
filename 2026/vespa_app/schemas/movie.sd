@@ -53,7 +53,7 @@ schema movie {
         }
 
         field embedding_fasttext type tensor<float>(x[100]) {
-            indexing: attribute | index
+            indexing: attribute | index # | summary <-- store for debugging
             index {
                 hnsw {
                     max-links-per-node: 16

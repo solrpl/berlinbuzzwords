@@ -170,6 +170,7 @@ POST /search/
 }
 #%%vespa
 #H1 What do you mean Document ID format? Bad query?
+# TODO: this should be a phrase
 POST /search/
 {
   "select": {
