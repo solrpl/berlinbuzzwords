@@ -35,7 +35,7 @@ VESPA_APP_DIR    = "./vespa_app"
 
 
 # ── Data ───────────────────────────────────────────────────────────────────────
-DATA_DIR = "./ml-25m/"
+DATA_DIR = "/Users/gro/praca/conferences/berlinbuzzwords/2026/ml-25m/"
 # /Users/gro/praca/conferences/berlinbuzzwords/2026/ml-25m/
 # /Users/radu/gits/berlinbuzzwords/2026/dataset/movielens/ml-latest-small/
 
@@ -544,28 +544,35 @@ def _ann(query, n=10):
     return [{"title": h["fields"].get("title","?"), "genres": h["fields"].get("genres",[]), "score": h["relevance"]}
             for h in resp.get("root",{}).get("children",[])]
 
-def _short(t, n=38): return t[:n]+"…" if len(t)>n else t
+def _ranked_col(ax, hits, label, color):
+    n = max(len(hits), 1)
+    ax.set_xlim(0, 1)
+    ax.set_ylim(0, n)
+    ax.axis("off")
+    ax.set_title(label, fontsize=11, color=color, fontweight="bold")
+    if not hits:
+        ax.text(0.5, n / 2, "no results", ha="center", va="center", color="grey")
+        return
+    for i, h in enumerate(hits):
+        top = n - i - 0.15
+        title = h["title"][:40] + "…" if len(h["title"]) > 40 else h["title"]
+        ax.text(0.02, top, f"{i+1}.", fontsize=8.5, va="top",
+                color=color, fontweight="bold")
+        ax.text(0.11, top, title, fontsize=8.5, va="top")
+        ax.text(0.11, top - 0.42, ", ".join(h["genres"][:2]),
+                fontsize=7.5, va="top", color="#999999", style="italic")
+        if i < len(hits) - 1:
+            ax.axhline(y=n - i - 1, color="#eeeeee", linewidth=0.5,
+                       xmin=0.01, xmax=0.99)
 
 def compare(query):
     bm25_hits = _bm25(query)
     ann_hits  = _ann(query)
-    fig = plt.figure(figsize=(14, 6))
+    fig = plt.figure(figsize=(14, 7))
     fig.suptitle(f'Query: "{query}"', fontsize=13, fontweight="bold")
-    gs  = gridspec.GridSpec(1, 2, wspace=0.05)
-    for col, (hits, label, color) in enumerate([(bm25_hits,"BM25","steelblue"),(ann_hits,"FastText","mediumseagreen")]):
-        ax = fig.add_subplot(gs[col])
-        if not hits:
-            ax.text(0.5, 0.5, "no results", ha="center", va="center", transform=ax.transAxes)
-        else:
-            mx = max(h["score"] for h in hits) or 1
-            bars = ax.barh(range(len(hits)), [h["score"]/mx for h in hits], color=color, alpha=0.85)
-            ax.set_yticks(range(len(hits)))
-            ax.set_yticklabels([_short(h["title"]) for h in hits], fontsize=9)
-            ax.invert_yaxis(); ax.set_xlim(0, 1.2); ax.set_xlabel("Normalised score")
-            for i, (bar, h) in enumerate(zip(bars, hits)):
-                ax.text(bar.get_width()+0.02, i, ", ".join(h["genres"][:2]), va="center", fontsize=7, color="grey")
-        ax.set_title(label, fontsize=11, color=color, fontweight="bold")
-        if col == 1: ax.yaxis.set_visible(False)
+    gs  = gridspec.GridSpec(1, 2, wspace=0.12)
+    _ranked_col(fig.add_subplot(gs[0]), bm25_hits, "BM25",     "steelblue")
+    _ranked_col(fig.add_subplot(gs[1]), ann_hits,  "FastText", "mediumseagreen")
     plt.tight_layout(); show(fig)
 
 for _q in ["sci-fi space adventure", "heist thriller", "love story paris"]:
@@ -615,39 +622,38 @@ def _arctic(query, n=10):
         for h in resp.get("root", {}).get("children", [])
     ]
 
+def _ranked_col(ax, hits, label, color):
+    n = max(len(hits), 1)
+    ax.set_xlim(0, 1)
+    ax.set_ylim(0, n)
+    ax.axis("off")
+    ax.set_title(label, fontsize=11, color=color, fontweight="bold")
+    if not hits:
+        ax.text(0.5, n / 2, "no results", ha="center", va="center", color="grey")
+        return
+    for i, h in enumerate(hits):
+        top = n - i - 0.15
+        title = h["title"][:40] + "…" if len(h["title"]) > 40 else h["title"]
+        ax.text(0.02, top, f"{i+1}.", fontsize=8.5, va="top",
+                color=color, fontweight="bold")
+        ax.text(0.11, top, title, fontsize=8.5, va="top")
+        ax.text(0.11, top - 0.42, ", ".join(h["genres"][:2]),
+                fontsize=7.5, va="top", color="#999999", style="italic")
+        if i < len(hits) - 1:
+            ax.axhline(y=n - i - 1, color="#eeeeee", linewidth=0.5,
+                       xmin=0.01, xmax=0.99)
+
 def compare3(query):
     bm25_hits   = _bm25(query)
     ft_hits     = _ann(query)
     arctic_hits = _arctic(query)
-
-    fig = plt.figure(figsize=(20, 6))
+    fig = plt.figure(figsize=(20, 7))
     fig.suptitle(f'Query: "{query}"', fontsize=13, fontweight="bold")
-    gs  = gridspec.GridSpec(1, 3, wspace=0.05)
-
-    for col, (hits, label, color) in enumerate([
-        (bm25_hits,   "BM25",      "steelblue"),
-        (ft_hits,     "FastText",  "mediumseagreen"),
-        (arctic_hits, "Arctic XS", "darkorchid"),
-    ]):
-        ax = fig.add_subplot(gs[col])
-        if not hits:
-            ax.text(0.5, 0.5, "no results", ha="center", va="center", transform=ax.transAxes)
-        else:
-            mx   = max(h["score"] for h in hits) or 1
-            bars = ax.barh(range(len(hits)), [h["score"] / mx for h in hits], color=color, alpha=0.85)
-            ax.set_yticks(range(len(hits)))
-            ax.set_yticklabels([_short(h["title"]) for h in hits], fontsize=9)
-            ax.invert_yaxis()
-            ax.set_xlim(0, 1.2)
-            ax.set_xlabel("Normalised score")
-            for i, (bar, h) in enumerate(zip(bars, hits)):
-                ax.text(bar.get_width() + 0.02, i, ", ".join(h["genres"][:2]),
-                        va="center", fontsize=7, color="grey")
-        ax.set_title(label, fontsize=11, color=color, fontweight="bold")
-        if col > 0: ax.yaxis.set_visible(False)
-
-    plt.tight_layout()
-    show(fig)
+    gs  = gridspec.GridSpec(1, 3, wspace=0.12)
+    _ranked_col(fig.add_subplot(gs[0]), bm25_hits,   "BM25",      "steelblue")
+    _ranked_col(fig.add_subplot(gs[1]), ft_hits,     "FastText",  "mediumseagreen")
+    _ranked_col(fig.add_subplot(gs[2]), arctic_hits, "Arctic XS", "darkorchid")
+    plt.tight_layout(); show(fig)
 
 for _q in ["sci-fi space adventure", "heist thriller", "love story paris"]:
     compare3(_q)
