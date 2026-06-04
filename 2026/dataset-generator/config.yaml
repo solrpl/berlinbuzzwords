@@ -2,7 +2,7 @@
 # dataset-generator module
 # Default: no template is being used
 # something like: select * from DOC_TYPE_GOES_HERE where {allowEmpty:true}userInput(@kw)
-query_template: "/Users/radu/gits/berlinbuzzwords/2026/dataset-generator/query_template.yql" 
+query_template: "/Users/radu/gits/berlinbuzzwords/2026/dataset-generator/query_template.yql.txt" 
 
 # Type of search engine to use
 # Accepted values: solr, elasticsearch, opensearch, vespa
@@ -49,7 +49,7 @@ generate_queries_from_documents: false # set to true for the first time you want
 # generate queries from category filters
 category_queries:
   - fields: ["genres_att"]
-    values_query_template_file: "/Users/radu/gits/berlinbuzzwords/2026/dataset-generator/genre_facet.yql"
+    values_query_template_file: "/Users/radu/gits/berlinbuzzwords/2026/dataset-generator/genre_facet.yql.txt"
 
 # Total number of queries to generate (includes predefined queries, if any)
 num_queries_needed: 400
