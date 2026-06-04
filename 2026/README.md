@@ -1,5 +1,7 @@
 [Follow-up info for our Berlin Buzzwords 2026 session](https://2026.berlinbuzzwords.de/session/circular-dependency-fixes-when-bootstrapping-a-golden-set/): "Circular Dependency Fixes When Bootstrapping a Golden Set".
 
+![qr-code for the session](qr-code.png)
+
 # More info
 
 The people:
@@ -28,6 +30,8 @@ You'll need:
 * The MovieLens ml-25m dataset in `ml-25m/`
 * A TMDB API key
 * [RRE repository](https://github.com/SeaseLtd/rated-ranking-evaluator) cloned
+
+**NOTE**: If [PR 266](https://github.com/SeaseLtd/rated-ranking-evaluator/pull/266) isn't merged yet, you need to clone the [PR branch](https://github.com/radu-gheorghe/rated-ranking-evaluator/tree/dataset-generator-llm-batching) instead. 
 
 ### Set up a Python 3.10+ Conda environment
 
