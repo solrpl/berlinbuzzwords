@@ -5,8 +5,8 @@
 # More info
 
 The people:
-- [Rafał Kuć](https://www.linkedin.com/in/rafalkuc/)
-- [Radu Gheorghe](https://www.linkedin.com/in/ragheorghe/)
+- [Rafał Kuć](https://www.linkedin.com/in/rafalkuc/) ([Authologic](https://authologic.com))
+- [Radu Gheorghe](https://www.linkedin.com/in/ragheorghe/) ([Vespa](https://vespa.ai))
 
 The tools:
 - [Vespa](https://vespa.ai/). **NOTE**: [the fist live Vespa conference](https://vespaai.live/) will be in September 2026 in London. [Discounted tickets are available here](https://buytickets.at/vespaaias/2158210?a=VespaFriends20#ticket_selection)
