@@ -11,7 +11,7 @@ import threading
 import time
 from collections import Counter
 
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as pltq
 import matplotlib.ticker as mticker
 import polars as pl
 import requests
@@ -29,13 +29,13 @@ except ImportError:
 VESPA_CONFIG_URL = "http://localhost:19071"
 VESPA_FEED_URL   = "http://localhost:8080"
 NAMESPACE        = "movies"
-VESPA_APP_DIR    = "./vespa_app"
+VESPA_APP_DIR    = "./2026/vespa_app"
 # /Users/gro/praca/conferences/berlinbuzzwords/2026/vespa_app/
 # /Users/radu/gits/berlinbuzzwords/2026/vespa_app/
 
 
 # ── Data ───────────────────────────────────────────────────────────────────────
-DATA_DIR = "/Users/gro/praca/conferences/berlinbuzzwords/2026/ml-25m/"
+DATA_DIR = "./2026/ml-25m/"
 # /Users/gro/praca/conferences/berlinbuzzwords/2026/ml-25m/
 # /Users/radu/gits/berlinbuzzwords/2026/dataset/movielens/ml-latest-small/
 
@@ -101,14 +101,89 @@ def ft_embed(text: str):
 print(f"Config ready  |  TMDB key: {'set' if TMDB_API_KEY else 'NOT SET'}  |  FastText: {HAS_FT}")
 
 #%%python
-# 2. Deploy vespa_app
+# 2. Additional helpers
+def _load_movies_for_feed():
+    links = {}
+    with open(os.path.join(DATA_DIR, "links.csv"), encoding="utf-8") as f:
+        for row in csv.DictReader(f):
+            links[row["movieId"]] = {"imdb_id": row["imdbId"], "tmdb_id": row["tmdbId"]}
+    docs = []
+    with open(os.path.join(DATA_DIR, "movies.csv"), encoding="utf-8") as f:
+        for row in csv.DictReader(f):
+            mid    = row["movieId"]
+            link   = links.get(mid, {})
+            genres = [g for g in row["genres"].split("|") if g and g != "(no genres listed)"]
+            fields = {
+                "id":      mid,
+                "title":   row["title"],
+                "genres":  genres,
+                "imdb_id": link.get("imdb_id", ""),
+                "tmdb_id": link.get("tmdb_id", ""),
+            }
+            year = _parse_year(row["title"])
+            if year:
+                fields["year"] = year
+            docs.append({"id": mid, "fields": fields})
+    return docs
+
+def _feed_docs(
+    docs_iter,
+    schema="movie",
+    total=None,
+    operation_type="feed",
+    progress_every=1000,
+    max_workers=64,
+    **kwargs,
+):
+    app = Vespa(url=VESPA_FEED_URL)
+    fed = failed = 0
+
+    def _callback(response, doc_id):
+        nonlocal fed, failed
+        if response.is_successful():
+            fed += 1
+        else:
+            failed += 1
+            print(f"  WARN {schema}/{doc_id}: {response.status_code}")
+        done = fed + failed
+        if done % progress_every == 0:
+            suffix = f" / {total:,}" if total is not None else ""
+            print(f"  {done:,}{suffix}")
+
+    errors = []
+
+    def _run_feed():
+        try:
+            app.feed_async_iterable(
+                iter=docs_iter,
+                schema=schema,
+                namespace=NAMESPACE,
+                callback=_callback,
+                operation_type=operation_type,
+                max_queue_size=1_000,
+                max_workers=max_workers,
+                max_connections=1,
+                **kwargs,
+            )
+        except BaseException as exc:
+            errors.append(exc)
+
+    # running from a separate thread to work around notebook limitations (asyncio.run() cannot be called from a running event loop)
+    thread = threading.Thread(target=_run_feed)
+    thread.start()
+    thread.join()
+    if errors:
+        raise errors[0]
+    return fed, failed
+#%%python
+# 3. Deploy vespa_app
 print("Deploying vespa_app...")
 # you'll need Vespa CLI for this (e.g., brew install vespa-cli)
 subprocess.run(["vespa", "deploy", "--wait", "300"], cwd=VESPA_APP_DIR, check=True)
 print("Deployed.")
 
 #%%python
-# 3. Index Movies
+# 4. Index Movies
 def _load_movies_for_feed():
     links = {}
     with open(os.path.join(DATA_DIR, "links.csv"), encoding="utf-8") as f:
